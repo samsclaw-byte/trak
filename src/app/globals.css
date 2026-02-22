@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: 160 84% 39%;
+    --background: 150 14% 97%;
+    --foreground: 222 47% 11%;
+  }
+  .dark {
+    --background: 158 43% 8%;
+    --foreground: 210 40% 98%;
+  }
+  body {
+    @apply bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased font-display;
+    min-height: max(884px, 100dvh);
+  }
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.calorie-ring {
+  background:
+    radial-gradient(closest-side, white 80%, transparent 80% 100%),
+    conic-gradient(#10b77f var(--progress, 65%), #e2e8f0 0);
+}
+.dark .calorie-ring {
+  background:
+    radial-gradient(closest-side, rgb(15 23 42) 80%, transparent 80% 100%),
+    conic-gradient(#10b77f var(--progress, 65%), #334155 0);
+}
