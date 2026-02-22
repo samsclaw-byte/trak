@@ -22,8 +22,14 @@ const baseClass =
   "group relative flex w-full items-center justify-center gap-3 overflow-hidden rounded-xl bg-white px-5 py-4 text-base font-bold text-slate-900 shadow-sm ring-1 ring-slate-200 transition-all hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700";
 
 /** Catches Rive load errors (missing/corrupt file) so we can show the Google icon fallback */
+type RiveErrorBoundaryProps = {
+  fallback: React.ReactNode;
+  onError: () => void;
+  children?: React.ReactNode;
+};
+
 class RiveErrorBoundary extends React.Component<
-  { fallback: React.ReactNode; onError: () => void },
+  RiveErrorBoundaryProps,
   { hasError: boolean }
 > {
   state = { hasError: false };
