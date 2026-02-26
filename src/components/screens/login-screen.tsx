@@ -3,14 +3,37 @@
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { RiveCtaButton } from "@/components/rive-cta-button";
 
 const GOOGLE_CALLBACK_URL = "/profile-setup";
 /** Direct link so server does the redirect to Google (avoids client signIn() issues e.g. in Workers). */
 const GOOGLE_SIGNIN_URL = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(GOOGLE_CALLBACK_URL)}`;
 
+/** Wrapper that reads searchParams inside Suspense so Next.js can prerender the page. */
 export function LoginScreen() {
+  return (
+    <Suspense
+      fallback={
+        <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[375px] flex-col justify-between overflow-hidden bg-background-light px-6 py-12 dark:bg-background-dark sm:min-h-screen sm:rounded-2xl sm:shadow-2xl md:max-w-[420px]">
+          <div className="flex flex-1 flex-col items-center justify-center gap-4">
+            <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10 text-4xl">
+              🥗
+            </div>
+            <h1 className="font-display text-4xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100">
+              Trak
+            </h1>
+            <div className="h-10 w-48 animate-pulse rounded-lg bg-slate-200 dark:bg-slate-700" />
+          </div>
+        </div>
+      }
+    >
+      <LoginScreenContent />
+    </Suspense>
+  );
+}
+
+function LoginScreenContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
