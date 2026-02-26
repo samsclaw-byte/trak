@@ -14,9 +14,13 @@ export const authOptions: NextAuthOptions = {
       return !!user?.email;
     },
     async redirect({ url, baseUrl }) {
-      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      const base = baseUrl.replace(/\/$/, "");
+      const path = url.startsWith("/") ? url : new URL(url).pathname;
+      // After Google sign-in, always send to profile-setup unless they had another page (e.g. /meals) as callbackUrl
+      if (path === "/" || path === "" || path === "/dashboard") return `${base}/profile-setup`;
+      if (url.startsWith("/")) return `${base}${url}`;
       if (new URL(url).origin === baseUrl) return url;
-      return baseUrl + "/dashboard";
+      return baseUrl + "/profile-setup";
     },
     async session({ session, token }) {
       if (session.user) {

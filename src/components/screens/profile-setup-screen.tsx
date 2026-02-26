@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ACTIVITY_LEVELS, type ActivityLevel } from "@/lib/bmr";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,10 +12,61 @@ type WeightUnit = "kg" | "lbs";
 type HeightUnit = "cm" | "in";
 type Gender = "male" | "female" | "other";
 
+const ACTIVITY_ICONS: Record<ActivityLevel, string> = {
+  1: "chair",
+  2: "directions_walk",
+  3: "jogging",
+  4: "directions_run",
+  5: "fitness_center",
+};
+
 export function ProfileSetupScreen() {
+  const router = useRouter();
   const [weightUnit, setWeightUnit] = useState<WeightUnit>("kg");
   const [heightUnit, setHeightUnit] = useState<HeightUnit>("cm");
   const [gender, setGender] = useState<Gender | null>("male");
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel>(3);
+  const [fullName, setFullName] = useState("");
+  const [age, setAge] = useState("");
+  const [weight, setWeight] = useState("");
+  const [height, setHeight] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleSubmit(e: React.FormEvent, skip: boolean) {
+    if (e) e.preventDefault();
+    setError(null);
+    setSaving(true);
+    try {
+      if (!skip) {
+        const res = await fetch("/api/profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fullName: fullName || undefined,
+            age: age ? parseInt(age, 10) : undefined,
+            weight: weight ? parseFloat(weight) : undefined,
+            weightUnit,
+            height: height ? parseFloat(height) : undefined,
+            heightUnit,
+            gender: gender ?? undefined,
+            activityLevel,
+          }),
+        });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok && res.status !== 200) {
+          setError(data.error ?? "Failed to save profile");
+          setSaving(false);
+          return;
+        }
+      }
+      router.push("/welcome");
+    } catch (err) {
+      setError("Something went wrong. Please try again.");
+    } finally {
+      setSaving(false);
+    }
+  }
 
   return (
     <div className="relative flex min-h-[100dvh] w-full max-w-[375px] flex-col overflow-x-hidden bg-background-light shadow-2xl dark:bg-background-dark sm:mx-auto sm:min-h-screen sm:rounded-2xl md:max-w-[420px]">
@@ -56,10 +109,20 @@ export function ProfileSetupScreen() {
             better results.
           </p>
         </header>
-        <form className="space-y-6">
+        <form id="profile-form" className="space-y-6" onSubmit={(e) => handleSubmit(e, false)}>
+          {error && (
+            <p className="text-center text-sm text-red-600 dark:text-red-400" role="alert">
+              {error}
+            </p>
+          )}
           <div className="space-y-2">
             <Label>Full Name</Label>
-            <Input placeholder="e.g. Alex Rivera" type="text" />
+            <Input
+              placeholder="e.g. Alex Rivera"
+              type="text"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <Label>Age</Label>
@@ -67,6 +130,8 @@ export function ProfileSetupScreen() {
               inputMode="numeric"
               placeholder="How old are you?"
               type="number"
+              value={age}
+              onChange={(e) => setAge(e.target.value)}
             />
           </div>
           <div className="space-y-2">
@@ -89,7 +154,13 @@ export function ProfileSetupScreen() {
                 </button>
               </div>
             </div>
-            <Input inputMode="decimal" placeholder="0.0" type="number" />
+            <Input
+              inputMode="decimal"
+              placeholder="0.0"
+              type="number"
+              value={weight}
+              onChange={(e) => setWeight(e.target.value)}
+            />
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between px-1">
@@ -111,7 +182,13 @@ export function ProfileSetupScreen() {
                 </button>
               </div>
             </div>
-            <Input inputMode="decimal" placeholder="0.0" type="number" />
+            <Input
+              inputMode="decimal"
+              placeholder="0.0"
+              type="number"
+              value={height}
+              onChange={(e) => setHeight(e.target.value)}
+            />
           </div>
           <div className="space-y-3">
             <Label className="ml-1">Gender</Label>
@@ -139,15 +216,66 @@ export function ProfileSetupScreen() {
               ))}
             </div>
           </div>
+          {/* Activity Level */}
+          <div className="space-y-4 pt-2">
+            <Label className="ml-1">Activity Level</Label>
+            <div className="space-y-6 px-2">
+              <div className="relative">
+                <input
+                  type="range"
+                  min={1}
+                  max={5}
+                  step={1}
+                  value={activityLevel}
+                  onChange={(e) => setActivityLevel(Number(e.target.value) as ActivityLevel)}
+                  className="h-2 w-full cursor-pointer appearance-none rounded-lg bg-slate-200 accent-primary dark:bg-slate-800"
+                />
+                <div className="mt-2 flex w-full justify-between px-1 text-[10px] font-bold uppercase tracking-tighter text-slate-400">
+                  <span>Min</span>
+                  <span>Max</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-5 gap-1">
+                {ACTIVITY_LEVELS.map(({ level, label }) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => setActivityLevel(level)}
+                    className={`flex flex-col items-center gap-1 transition-opacity ${
+                      activityLevel === level ? "opacity-100" : "opacity-50"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-xl">
+                      {ACTIVITY_ICONS[level]}
+                    </span>
+                    <span className="text-[9px] font-bold leading-tight text-center">
+                      {label}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
         </form>
       </main>
 
       <footer className="fixed bottom-0 left-1/2 flex w-full max-w-[375px] -translate-x-1/2 flex-col gap-4 border-t border-slate-100 bg-background-light/90 p-6 backdrop-blur-lg dark:border-slate-800 dark:bg-background-dark/90 md:max-w-[420px]">
-        <Button className="w-full" asChild>
-          <Link href="/dashboard">Continue</Link>
+        <Button
+          type="submit"
+          form="profile-form"
+          className="w-full"
+          disabled={saving}
+        >
+          {saving ? "Saving…" : "Continue"}
         </Button>
-        <Button variant="ghost" className="w-full py-2 text-sm font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200" asChild>
-          <Link href="/dashboard">Skip for now</Link>
+        <Button
+          type="button"
+          variant="ghost"
+          className="w-full py-2 text-sm font-bold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+          disabled={saving}
+          onClick={(e) => handleSubmit(e as unknown as React.FormEvent, true)}
+        >
+          Skip for now
         </Button>
       </footer>
       <div className="h-8 shrink-0" />

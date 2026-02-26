@@ -23,7 +23,7 @@ The “Continue with Google” button uses NextAuth.js with the Google OAuth pro
    - `NEXTAUTH_URL` – `http://localhost:3000` (or your production URL)
    - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` from the OAuth client.
 
-After login, users are redirected to `/dashboard`. If they’re already signed in, visiting `/` redirects to the dashboard.
+After login, users are redirected to **Profile setup** (`/profile-setup`). After saving or skipping, they go to the dashboard. If they’re already signed in, visiting `/` redirects to profile-setup (or dashboard if you change that in code).
 
 ## Rive animation on the CTA button
 
@@ -48,6 +48,64 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+## Deploy with Cloudflare
+
+Trak is set up to deploy to **Cloudflare Workers** via [OpenNext for Cloudflare](https://opennext.js.org/cloudflare).
+
+### 1. Install and log in
+
+```bash
+npm install
+npx wrangler login
+```
+
+### 2. Set environment variables for production
+
+Create a [Cloudflare Workers secret](https://developers.cloudflare.com/workers/configuration/secrets/) or use `wrangler secret put`:
+
+```bash
+npx wrangler secret put NEXTAUTH_SECRET
+npx wrangler secret put NEXTAUTH_URL      # e.g. https://trak.<your-subdomain>.workers.dev
+npx wrangler secret put GOOGLE_CLIENT_ID
+npx wrangler secret put GOOGLE_CLIENT_SECRET
+```
+
+Or in **Cloudflare Dashboard** → Workers & Pages → your project → Settings → Variables and Secrets.
+
+### 3. (Optional) D1 database for profiles
+
+To persist profile data when deployed to Cloudflare:
+
+1. Create a D1 database:
+   ```bash
+   npx wrangler d1 create trak1-db
+   ```
+2. Copy the `database_id` from the output. In `wrangler.toml`, uncomment the `[[d1_databases]]` block and set `database_id` to that value.
+3. Create the `profiles` table (run from project root):
+   ```bash
+   npx wrangler d1 execute trak1-db --remote --file=./schema.sql
+   ```
+
+Without D1, profile data is still accepted (Continue/Skip work) but not persisted. Locally and on Vercel, profile save succeeds without D1.
+
+### 4. Deploy
+
+```bash
+npm run deploy
+```
+
+After the first deploy, Cloudflare gives you a URL like **https://trak.&lt;your-subdomain&gt;.workers.dev**. Set `NEXTAUTH_URL` to that URL and add the same URL’s callback in Google OAuth:
+
+- **Authorized redirect URI:** `https://trak.<your-subdomain>.workers.dev/api/auth/callback/google`
+
+### 5. Preview locally (optional)
+
+To run the app in the Workers runtime locally before deploying:
+
+```bash
+npm run preview
+```
 
 ## Routes
 

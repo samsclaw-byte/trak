@@ -1,18 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect } from "react";
 import { RiveCtaButton } from "@/components/rive-cta-button";
 
-const GOOGLE_CALLBACK_URL = "/dashboard";
+const GOOGLE_CALLBACK_URL = "/profile-setup";
+/** Direct link so server does the redirect to Google (avoids client signIn() issues e.g. in Workers). */
+const GOOGLE_SIGNIN_URL = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(GOOGLE_CALLBACK_URL)}`;
 
 export function LoginScreen() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const searchParams = useSearchParams();
+  const authError = searchParams.get("error");
 
   useEffect(() => {
     if (status === "authenticated" && session) {
@@ -20,16 +22,7 @@ export function LoginScreen() {
     }
   }, [status, session, router]);
 
-  async function handleGoogleSignIn() {
-    setIsLoading(true);
-    setError(null);
-    try {
-      await signIn("google", { callbackUrl: GOOGLE_CALLBACK_URL });
-    } catch (err) {
-      setError("Something went wrong. Please try again.");
-      setIsLoading(false);
-    }
-  }
+  const isGoogleError = authError === "google" || authError === "OAuthAccountNotLinked" || authError === "OAuthCallback";
 
   return (
     <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[375px] flex-col justify-between overflow-hidden bg-background-light px-6 py-12 dark:bg-background-dark sm:min-h-screen sm:rounded-2xl sm:shadow-2xl md:max-w-[420px]">
@@ -70,18 +63,23 @@ export function LoginScreen() {
 
       {/* Bottom: Actions */}
       <div className="space-y-6 pb-4">
-        <RiveCtaButton
-          onClick={handleGoogleSignIn}
-          disabled={isLoading}
-          aria-busy={isLoading}
-        >
-          {isLoading ? "Signing in…" : "Continue with Google"}
-        </RiveCtaButton>
-        {error && (
-          <p className="text-center text-sm text-red-600 dark:text-red-400" role="alert">
-            {error}
-          </p>
+        {isGoogleError && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200" role="alert">
+            <p className="font-medium">Google sign-in didn’t complete</p>
+            <p className="mt-1 text-amber-700 dark:text-amber-300">
+              This can happen when the app is hosted on some serverless runtimes. Try again, or use a different network.
+            </p>
+            <Link
+              href="/"
+              className="mt-2 inline-block text-sm font-semibold text-amber-800 underline underline-offset-2 dark:text-amber-200"
+            >
+              Dismiss
+            </Link>
+          </div>
         )}
+        <RiveCtaButton href={GOOGLE_SIGNIN_URL}>
+          Continue with Google
+        </RiveCtaButton>
         <div className="px-2">
           <p className="text-center text-[12px] leading-relaxed text-slate-500 dark:text-slate-500">
             By continuing, you agree to our{" "}
