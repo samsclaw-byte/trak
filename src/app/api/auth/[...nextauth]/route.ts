@@ -7,18 +7,25 @@ type RouteContext = { params: Promise<{ nextauth?: string[] }> };
 
 async function GET(req: Request, ctx: RouteContext): Promise<Response> {
   const url = new URL(req.url);
-  if (url.pathname === "/api/auth/callback/google") {
-    console.log("[TrakAuth Route]", "callback/google hit", "code:", url.searchParams.has("code"), "state:", url.searchParams.has("state"), "error:", url.searchParams.get("error") ?? "none");
+  // Log every auth request in the route (Runtime/Function logs) so callback is visible
+  console.log("[TrakAuthRoute]", "GET", url.pathname, "code:", url.searchParams.has("code"), "state:", url.searchParams.has("state"));
+  try {
+    return await handler(req, ctx as never);
+  } catch (err) {
+    console.error("[TrakAuthRoute] GET error:", err);
+    throw err;
   }
-  return handler(req, ctx as never);
 }
 
 async function POST(req: Request, ctx: RouteContext): Promise<Response> {
   const url = new URL(req.url);
-  if (url.pathname === "/api/auth/callback/google") {
-    console.log("[TrakAuth Route]", "callback/google hit", "code:", url.searchParams.has("code"), "state:", url.searchParams.has("state"), "error:", url.searchParams.get("error") ?? "none");
+  console.log("[TrakAuthRoute]", "POST", url.pathname, "code:", url.searchParams.has("code"), "state:", url.searchParams.has("state"));
+  try {
+    return await handler(req, ctx as never);
+  } catch (err) {
+    console.error("[TrakAuthRoute] POST error:", err);
+    throw err;
   }
-  return handler(req, ctx as never);
 }
 
 export { GET, POST };
