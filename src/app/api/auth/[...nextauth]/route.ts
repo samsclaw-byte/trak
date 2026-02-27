@@ -19,7 +19,9 @@ async function GET(req: Request, ctx: RouteContext): Promise<Response> {
     const res = await handler(req, ctx as never);
     return noCache(res);
   } catch (err) {
-    console.error("[TrakAuthRoute] GET error:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error("[TrakAuthRoute] GET error:", msg, stack ?? "");
     throw err;
   }
 }
@@ -31,7 +33,9 @@ async function POST(req: Request, ctx: RouteContext): Promise<Response> {
     const res = await handler(req, ctx as never);
     return noCache(res);
   } catch (err) {
-    console.error("[TrakAuthRoute] POST error:", err);
+    const msg = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error("[TrakAuthRoute] POST error:", msg, stack ?? "");
     throw err;
   }
 }

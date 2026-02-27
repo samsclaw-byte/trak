@@ -113,6 +113,15 @@ export function RiveCtaButton({
   );
 
   if (href) {
+    // Use plain <a> for auth signin so the browser does a full page navigation.
+    // Next.js Link would send an RSC request; NextAuth expects a normal GET and redirects to Google.
+    if (href.startsWith("/api/auth/signin/")) {
+      return (
+        <a href={href} className={cn(baseClass, className)}>
+          {content}
+        </a>
+      );
+    }
     return (
       <Link href={href} className={cn(baseClass, className)}>
         {content}
