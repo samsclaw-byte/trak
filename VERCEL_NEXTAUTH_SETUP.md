@@ -131,3 +131,21 @@ After login, users are sent to **Create your profile**. To persist that data on 
 4. **Redeploy** after connecting the database.
 
 The profile API uses **D1** when deployed on Cloudflare and **Neon/Postgres** when `DATABASE_URL` is set (e.g. on Vercel).
+
+---
+
+## 7. Meals and Kimi/Moonshot (dashboard add meal)
+
+To use **Add Meal** on the dashboard (Kimi 2.5 / Moonshot AI for nutrition estimates):
+
+1. **Create the `meals` table in Neon**  
+   Run the SQL in **`schema-meals-neon.sql`** in the Neon SQL editor (same way as the profiles table). This creates the `meals` table linked to user profiles.
+
+2. **Moonshot API key**  
+   - Get an API key from [Moonshot AI Open Platform](https://platform.moonshot.ai/console/api-keys).  
+   - In Vercel → **Settings** → **Environment Variables**, add:
+     - **Name:** `MOONSHOT_API_KEY`
+     - **Value:** your Moonshot API key  
+   - Optional: **`MOONSHOT_MODEL`** — e.g. `kimi-k2-turbo-preview` (default) or another model name if you use a different one.
+
+3. **Redeploy** after adding the env var and creating the `meals` table.

@@ -19,6 +19,59 @@ export type ProfileBody = {
 
 const DEV_TEST_HEADER = "x-trak-d1-test";
 
+export async function GET() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const userId = session.user.id;
+
+  const databaseUrl = process.env.DATABASE_URL;
+  if (databaseUrl) {
+    try {
+      const { neon } = await import("@neondatabase/serverless");
+      const sql = neon(databaseUrl);
+      const rows = await sql`
+        SELECT "fullName", "dailyCalories", bmr
+        FROM profiles
+        WHERE "userId" = ${userId}
+        LIMIT 1
+      `;
+      const row = rows[0] as { fullName: string | null; dailyCalories: number | null; bmr: number | null } | undefined;
+      if (row) {
+        return NextResponse.json({
+          fullName: row.fullName ?? null,
+          dailyCalories: row.dailyCalories ?? null,
+          bmr: row.bmr ?? null,
+        });
+      }
+    } catch (err) {
+      console.warn("Profile GET (Postgres):", err);
+    }
+  }
+
+  try {
+    const { getCloudflareContext } = await import("@opennextjs/cloudflare");
+    const { env } = getCloudflareContext();
+    const db = (env as { DB?: D1Database }).DB;
+    if (db) {
+      const stmt = db.prepare("SELECT fullName, dailyCalories, bmr FROM profiles WHERE userId = ? LIMIT 1").bind(userId);
+      const result = await stmt.first();
+      if (result) {
+        return NextResponse.json({
+          fullName: (result as { fullName: string | null }).fullName ?? null,
+          dailyCalories: (result as { dailyCalories: number | null }).dailyCalories ?? null,
+          bmr: (result as { bmr: number | null }).bmr ?? null,
+        });
+      }
+    }
+  } catch {
+    // D1 not available
+  }
+
+  return NextResponse.json({ fullName: null, dailyCalories: null, bmr: null });
+}
+
 export async function POST(request: Request) {
   let userId: string | null = null;
 
