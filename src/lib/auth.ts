@@ -43,7 +43,13 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET?.trim(), // trim in case env has trailing newline/space from Vercel
   cookies: {
     // Ensure state/callback cookies work when Google redirects back (sameSite: lax)
-    callbackUrl: { options: { sameSite: "lax" as const, secure: true } },
-    csrfToken: { options: { sameSite: "lax" as const, secure: true } },
+    callbackUrl: {
+      name: "__Secure-next-auth.callback-url",
+      options: { sameSite: "lax" as const, secure: true },
+    },
+    csrfToken: {
+      name: "__Host-next-auth.csrf-token",
+      options: { sameSite: "lax" as const, secure: true },
+    },
   },
 };
