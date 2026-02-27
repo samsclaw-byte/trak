@@ -71,8 +71,9 @@ export function DashboardScreen() {
   const daily = profile?.dailyCalories ?? 2200;
   const pct = daily > 0 ? Math.min(100, (consumed / daily) * 100) : 0;
   const overPct = consumed > daily ? Math.min(100, ((consumed - daily) / daily) * 100) : 0;
-  const ringGreen = `${pct}%`;
-  const ringRedEnd = `${pct + overPct}%`;
+  // When over: show green up to (100 - overPct)%, then red for the last overPct% so the ring "overflows" in red
+  const ringGreen = consumed > daily ? `${100 - overPct}%` : `${pct}%`;
+  const ringRedEnd = consumed > daily ? "100%" : `${pct}%`;
 
   const handleAddMeal = async () => {
     const desc = mealInput.trim();

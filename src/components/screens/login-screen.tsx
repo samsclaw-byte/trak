@@ -90,7 +90,7 @@ function LoginScreenContent() {
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200" role="alert">
             <p className="font-medium">Google sign-in didn’t complete</p>
             <p className="mt-1 text-amber-700 dark:text-amber-300">
-              This can happen when the app is hosted on some serverless runtimes. Try again, or use a different network.
+              On phone: open this site in your browser (e.g. Safari or Chrome) at the same URL you use on PC (e.g. trak-app.net), not from a link in another app. Each person signs in with their own Google account.
             </p>
             <Link
               href="/"

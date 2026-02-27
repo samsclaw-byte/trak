@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ACTIVITY_LEVELS, type ActivityLevel } from "@/lib/bmr";
@@ -32,6 +32,22 @@ export function ProfileSetupScreen() {
   const [height, setHeight] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // If user already has a profile (returning user), send them to dashboard
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/profile")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled || !data) return;
+        const hasProfile = data.dailyCalories != null || data.fullName != null;
+        if (hasProfile) router.replace("/dashboard");
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [router]);
 
   async function handleSubmit(e: React.FormEvent, skip: boolean) {
     if (e) e.preventDefault();
