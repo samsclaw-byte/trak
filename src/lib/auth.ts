@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 const useDatabaseSession = false; // !!process.env.DATABASE_URL;
 
 export const authOptions: NextAuthOptions = {
-  ...(useDatabaseSession && { adapter: PrismaAdapter(prisma) }),
+  ...(useDatabaseSession ? { adapter: PrismaAdapter(prisma) } : {}),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
