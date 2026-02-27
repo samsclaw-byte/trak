@@ -1,10 +1,9 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import type { ActivityLevel } from "@/lib/bmr";
 import { calculateBMRAndDailyCalories } from "@/lib/bmr";
-import { authOptions } from "@/lib/auth";
+import { getUserId } from "@/lib/supabase/auth-server";
 
-// Profile is keyed by session.user.id (Google sub). BMR and daily calories (Harris–Benedict + activity) are computed and stored in Neon/D1 so the app remembers returning users.
+// Profile is keyed by Supabase user id. BMR and daily calories (Harris–Benedict + activity) are computed and stored in Neon/D1 so the app remembers returning users.
 
 export type ProfileBody = {
   fullName?: string;
@@ -20,11 +19,10 @@ export type ProfileBody = {
 const DEV_TEST_HEADER = "x-trak-d1-test";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session?.user?.id) {
+  const userId = await getUserId();
+  if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const userId = session.user.id;
 
   const databaseUrl = process.env.DATABASE_URL;
   if (databaseUrl) {
@@ -81,11 +79,10 @@ export async function POST(request: Request) {
   if (devSecret && testHeader === devSecret) {
     userId = "dev-test-user-preview";
   } else {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    userId = await getUserId();
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    userId = session.user.id;
   }
 
   let body: ProfileBody;

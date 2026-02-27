@@ -1,12 +1,6 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
+import { getUserId } from "@/lib/supabase/auth-server";
 import { getNutritionForMeal } from "@/lib/moonshot";
-
-async function getUserId(): Promise<string | null> {
-  const session = await getServerSession(authOptions);
-  return session?.user?.id ?? null;
-}
 
 /** PATCH /api/meals/[id] — update a meal (re-run Kimi for new description) */
 export async function PATCH(

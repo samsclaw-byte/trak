@@ -1,14 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, Suspense } from "react";
+import { createClient } from "@/lib/supabase/client";
+import { useSession } from "@/components/providers/session-provider";
 import { RiveCtaButton } from "@/components/rive-cta-button";
 
 const GOOGLE_CALLBACK_URL = "/profile-setup";
-/** Direct link so server does the redirect to Google (avoids client signIn() issues e.g. in Workers). */
-const GOOGLE_SIGNIN_URL = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(GOOGLE_CALLBACK_URL)}`;
 
 /** Wrapper that reads searchParams inside Suspense so Next.js can prerender the page. */
 export function LoginScreen() {
@@ -45,7 +44,18 @@ function LoginScreenContent() {
     }
   }, [status, session, router]);
 
-  const isGoogleError = authError === "google" || authError === "OAuthAccountNotLinked" || authError === "OAuthCallback";
+  const isAuthError =
+    authError === "google" || authError === "auth" || authError === "OAuthAccountNotLinked" || authError === "OAuthCallback";
+
+  const handleGoogleSignIn = async () => {
+    const supabase = createClient();
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(GOOGLE_CALLBACK_URL)}`,
+      },
+    });
+  };
 
   return (
     <div className="relative mx-auto flex min-h-[100dvh] w-full max-w-[375px] flex-col justify-between overflow-hidden bg-background-light px-6 py-12 dark:bg-background-dark sm:min-h-screen sm:rounded-2xl sm:shadow-2xl md:max-w-[420px]">
@@ -86,7 +96,7 @@ function LoginScreenContent() {
 
       {/* Bottom: Actions */}
       <div className="space-y-6 pb-4">
-        {isGoogleError && (
+        {isAuthError && (
           <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-200" role="alert">
             <p className="font-medium">Google sign-in didn’t complete</p>
             <p className="mt-1 text-amber-700 dark:text-amber-300">
@@ -100,7 +110,7 @@ function LoginScreenContent() {
             </Link>
           </div>
         )}
-        <RiveCtaButton href={GOOGLE_SIGNIN_URL}>
+        <RiveCtaButton onClick={handleGoogleSignIn}>
           Continue with Google
         </RiveCtaButton>
         <div className="px-2">

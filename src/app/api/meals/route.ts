@@ -1,13 +1,8 @@
-import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
-import { authOptions } from "@/lib/auth";
+import { getUserId } from "@/lib/supabase/auth-server";
 import { getNutritionForMeal } from "@/lib/moonshot";
 
 const MEAL_TYPES = ["breakfast", "lunch", "dinner", "snack"] as const;
-
-function getUserId(request: Request): Promise<string | null> {
-  return getServerSession(authOptions).then((s) => s?.user?.id ?? null);
-}
 
 function todayISO(): string {
   const d = new Date();
@@ -16,7 +11,7 @@ function todayISO(): string {
 
 /** GET /api/meals?date=YYYY-MM-DD — list meals for a date (default today) */
 export async function GET(request: Request) {
-  const userId = await getUserId(request);
+  const userId = await getUserId();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -71,7 +66,7 @@ export async function GET(request: Request) {
 
 /** POST /api/meals — add a meal (calls Kimi for nutrition, then saves to Neon) */
 export async function POST(request: Request) {
-  const userId = await getUserId(request);
+  const userId = await getUserId();
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
