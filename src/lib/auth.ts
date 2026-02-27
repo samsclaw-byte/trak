@@ -3,8 +3,11 @@ import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
 
+// Set to false to test: if signin then redirects to Google, the failure is the DB adapter.
+const useDatabaseSession = false; // !!process.env.DATABASE_URL;
+
 export const authOptions: NextAuthOptions = {
-  adapter: PrismaAdapter(prisma),
+  ...(useDatabaseSession && { adapter: PrismaAdapter(prisma) }),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
@@ -13,32 +16,36 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async signIn({ user }) {
-      // Allow sign-in; optionally restrict by email/domain here
       return !!user?.email;
     },
     async redirect({ url, baseUrl }) {
       const base = baseUrl.replace(/\/$/, "");
       const path = url.startsWith("/") ? url : new URL(url).pathname;
-      // After Google sign-in, always send to profile-setup unless they had another page (e.g. /meals) as callbackUrl
       if (path === "/" || path === "" || path === "/dashboard") return `${base}/profile-setup`;
       if (url.startsWith("/")) return `${base}${url}`;
       if (new URL(url).origin === baseUrl) return url;
       return baseUrl + "/profile-setup";
     },
-    async session({ session, user }) {
+    async session(args) {
+      const { session } = args;
       if (session.user) {
-        session.user.id = user.id;
+        if (useDatabaseSession && "user" in args) {
+          session.user.id = args.user.id;
+        } else if ("token" in args) {
+          session.user.id = args.token.sub ?? "";
+        }
       }
       return session;
     },
+    ...(useDatabaseSession ? {} : { async jwt({ token }) { return token; } }),
   },
   pages: {
     signIn: "/",
   },
   session: {
-    strategy: "database",
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours
+    strategy: useDatabaseSession ? "database" : "jwt",
+    maxAge: 30 * 24 * 60 * 60,
+    ...(useDatabaseSession && { updateAge: 24 * 60 * 60 }),
   },
   secret: process.env.NEXTAUTH_SECRET?.trim(), // trim in case env has trailing newline/space from Vercel
   cookies: {
