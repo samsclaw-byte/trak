@@ -2,6 +2,7 @@ import type { NextAuthOptions } from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 
 export const authOptions: NextAuthOptions = {
+  trustHost: true, // required for Vercel/serverless so NextAuth trusts the request host
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
@@ -39,5 +40,10 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  secret: process.env.NEXTAUTH_SECRET,
+  secret: process.env.NEXTAUTH_SECRET?.trim(), // trim in case env has trailing newline/space from Vercel
+  cookies: {
+    // Ensure state/callback cookies work when Google redirects back (sameSite: lax)
+    callbackUrl: { options: { sameSite: "lax" as const, secure: true } },
+    csrfToken: { options: { sameSite: "lax" as const, secure: true } },
+  },
 };
