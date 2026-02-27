@@ -56,12 +56,13 @@ export async function GET() {
     const db = (env as { DB?: D1Database }).DB;
     if (db) {
       const stmt = db.prepare("SELECT fullName, dailyCalories, bmr FROM profiles WHERE userId = ? LIMIT 1").bind(userId);
-      const result = await stmt.first();
+      const runResult = await stmt.run();
+      const result = (runResult as D1Result).results?.[0] as { fullName: string | null; dailyCalories: number | null; bmr: number | null } | undefined;
       if (result) {
         return NextResponse.json({
-          fullName: (result as { fullName: string | null }).fullName ?? null,
-          dailyCalories: (result as { dailyCalories: number | null }).dailyCalories ?? null,
-          bmr: (result as { bmr: number | null }).bmr ?? null,
+          fullName: result.fullName ?? null,
+          dailyCalories: result.dailyCalories ?? null,
+          bmr: result.bmr ?? null,
         });
       }
     }
@@ -201,4 +202,5 @@ interface D1PreparedStatement {
 
 interface D1Result {
   success: boolean;
+  results?: Array<Record<string, unknown>>;
 }
